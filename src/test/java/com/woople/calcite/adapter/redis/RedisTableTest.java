@@ -22,7 +22,7 @@ public class RedisTableTest {
     public void init() throws Exception{
         final Properties properties = new Properties();
         properties.setProperty("caseSensitive", "true");
-        String model = "{\"version\":\"1.0\",\"defaultSchema\":\"SEDIS\",\"schemas\":[{\"name\":\"SEDIS\",\"type\":\"custom\",\"factory\":\"com.woople.calcite.adapter.redis.RedisSchemaFactory\",\"operand\":{\"sedis.redis.cluster.nodes\":\"10.1.236.179:6379,10.1.236.179:6380,10.1.236.179:6381\",\"sedis.redis.table\":{\"tableName\":\"BAZ\",\"fields\":\"ID:VARCHAR,NAME:VARCHAR\",\"keys\":\"ID\"}}}]}";
+        String model = "{\"version\":\"1.0\",\"defaultSchema\":\"SEDIS\",\"schemas\":[{\"name\":\"SEDIS\",\"type\":\"custom\",\"factory\":\"com.woople.calcite.adapter.redis.RedisSchemaFactory\",\"operand\":{\"sedis.redis.cluster.nodes\":\"10.1.236.179:6379,10.1.236.179:6380,10.1.236.179:6381\",\"sedis.redis.table\":{\"tableName\":\"baz\",\"fields\":\"id:VARCHAR,name:VARCHAR\",\"keys\":\"id\"}}}]}";
         Connection connection = DriverManager.getConnection("jdbc:calcite:model=inline:" + model, properties);
 
         statement = connection.createStatement();
@@ -32,7 +32,7 @@ public class RedisTableTest {
     @Test
     @Ignore
     public void testRedisTable() throws Exception{
-        ResultSet resultSet = statement.executeQuery("select * from BAZ where ID='2'");
+        ResultSet resultSet = statement.executeQuery("select * from \"baz\" where \"id\"='2'");
         logger.info(getData(resultSet).toString().toUpperCase());
         logger.info("===========");
     }

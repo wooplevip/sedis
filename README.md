@@ -44,6 +44,7 @@
             Connection connection = DriverManager.getConnection("jdbc:calcite:model=inline:" + model);
 
             Statement statement = connection.createStatement();
+            //如果表名和字段名为小写单词，需要加引号，例如select * from "baz" where "id"='2'
             ResultSet resultSet = statement.executeQuery("select * from BAZ where ID='2'");
             ResultSetMetaData metaData = resultSet.getMetaData();
             int columnSize = metaData.getColumnCount();
@@ -69,8 +70,8 @@
 
 目前0.1版本为简单的体验版
 
-1. 目前只支持Redis cluster中的HASH结构的数据
-2. 只支持`select`查询语句
+1. 只支持Redis cluster中的HASH结构的数据
+2. 只支持简单`select`查询语句，不支持join
 
 ## 后续计划
 
