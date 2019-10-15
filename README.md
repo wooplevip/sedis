@@ -1,7 +1,7 @@
 
 # sedis
 
-SQL for Redis
+***S***QL for R***edis***
 
 > 基于[Apache Calcite](http://calcite.apache.org/)实现了通过jdbc的方法连接[Redis  Cluster](https://redis.io/topics/cluster-tutorial)
 
