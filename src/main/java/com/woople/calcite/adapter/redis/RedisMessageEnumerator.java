@@ -16,9 +16,6 @@ import java.util.function.BiConsumer;
 public class RedisMessageEnumerator implements Enumerator<Object[]> {
     private final RedissonClient redissonClient;
     private final AtomicBoolean cancelFlag;
-    //private final String[] filterValues;
-    //private final RowConverter<E> rowConverter;
-    //private final RedisRowConverter<String, String> rowConverter;
     private final RedisTableOptions redisTableOptions;
 
     private Map<String, String> current;
@@ -42,8 +39,6 @@ public class RedisMessageEnumerator implements Enumerator<Object[]> {
                                   AtomicBoolean cancelFlag) {
         this.redissonClient = redissonClient;
         this.cancelFlag = cancelFlag;
-//        this.filterValues = filterValues;
-//        this.rowConverter = rowConverter;
         this.redisTableOptions = redisTableOptions;
     }
 

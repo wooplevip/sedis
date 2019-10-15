@@ -3,11 +3,14 @@ package com.woople.calcite.adapter.redis;
 import org.apache.calcite.schema.Schema;
 import org.apache.calcite.schema.SchemaFactory;
 import org.apache.calcite.schema.SchemaPlus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
 public class RedisSchemaFactory implements SchemaFactory {
+    private final static Logger logger = LoggerFactory.getLogger(RedisSchemaFactory.class);
 
     @Override
     public Schema create(SchemaPlus parentSchema, String name, Map<String, Object> operand) {
@@ -44,6 +47,7 @@ public class RedisSchemaFactory implements SchemaFactory {
                                 + "'%s'\n"
                                 + "RedisRowConverter '%s' is invalid",
                         name, operand, rowConverterClass);
+                logger.error(details, e);
                 throw new RuntimeException(details, e);
             }
         } else {

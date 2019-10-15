@@ -6,6 +6,8 @@ import com.google.common.collect.Maps;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.*;
 import java.util.List;
@@ -13,6 +15,7 @@ import java.util.Map;
 
 @Ignore
 public class RedisTableTest {
+    private final static Logger logger = LoggerFactory.getLogger(RedisTableTest.class);
     Statement statement = null;
     @Before
     public void init() throws Exception{
@@ -25,9 +28,8 @@ public class RedisTableTest {
     @Test
     public void testRedisTable() throws Exception{
         ResultSet resultSet = statement.executeQuery("select * from BAZ where ID='2'");
-        System.out.println(getData(resultSet));
-
-        System.out.println("===");
+        logger.info(getData(resultSet).toString());
+        logger.info("===========");
     }
 
     private List<Map<String,Object>> getData(ResultSet resultSet)throws Exception{

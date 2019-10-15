@@ -16,13 +16,8 @@ import org.redisson.client.codec.Codec;
 import org.redisson.config.ClusterServersConfig;
 import org.redisson.config.Config;
 
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.BiConsumer;
 
 public class RedisTable extends AbstractTable implements FilterableTable {
     protected RelProtoDataType protoRowType;
