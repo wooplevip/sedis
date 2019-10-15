@@ -86,26 +86,25 @@ public class RedisMessageEnumerator implements Enumerator<Object[]> {
 
         ExecutorService cachedThreadPool = Executors.newCachedThreadPool();
 
-        int recordCount = 0;
         ConcurrentHashMap<String, RFuture<Map<String, String>>> rf = new ConcurrentHashMap<>();
         CountDownLatch latch = new CountDownLatch(keyList.size());
 
-        for (String key : keyList) {
-            recordCount ++;
-            if (recordCount > RedisTableConstants.REDIS_TABLE_RECORD_MAX){
-                break;
-            }
-            RMapAsync<String, String> rMapAsync = batch.getMap(key);
-
-            cachedThreadPool.execute(new Runnable() {
-                @Override
-                public void run() {
+        cachedThreadPool.execute(new Runnable() {
+            @Override
+            public void run() {
+                int recordCount = 0;
+                for (String key : keyList) {
+                    recordCount ++;
+                    if (recordCount > RedisTableConstants.REDIS_TABLE_RECORD_MAX){
+                        break;
+                    }
+                    RMapAsync<String, String> rMapAsync = batch.getMap(key);
                     RFuture<Map<String, String>> rfMap = rMapAsync.readAllMapAsync();
                     rf.put(key, rfMap);
                     latch.countDown();
                 }
-            });
-        }
+            }
+        });
 
         try {
             latch.await();
