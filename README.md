@@ -77,4 +77,5 @@
 
 1. 支持Redis单机模式
 2. 优化参数配置
-3. 支持`update`和`insert`语句
+3. 支持redis其他格式数据的查询
+4. 支持`update`和`insert`语句
