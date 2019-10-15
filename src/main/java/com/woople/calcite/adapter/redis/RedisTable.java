@@ -1,6 +1,5 @@
 package com.woople.calcite.adapter.redis;
 
-import com.woople.calcite.adapter.csv.CsvEnumerator;
 import org.apache.calcite.DataContext;
 import org.apache.calcite.linq4j.AbstractEnumerable;
 import org.apache.calcite.linq4j.Enumerable;
