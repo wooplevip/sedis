@@ -1,4 +1,5 @@
-
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+![version](https://img.shields.io/badge/version-0.1.0-blue.svg?maxAge=2592000)
 # sedis
 
 ***S***QL for R***edis***
