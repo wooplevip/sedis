@@ -1,6 +1,7 @@
 package com.woople.calcite.adapter.redis.connection.redisson;
 
 import com.woople.calcite.adapter.redis.connection.RedisConnection;
+import com.woople.calcite.adapter.redis.connection.RedisKeyCommands;
 import org.redisson.api.RBatch;
 import org.redisson.api.RedissonClient;
 
@@ -20,6 +21,11 @@ public class RedissonConnection implements RedisConnection {
     @Override
     public RedissonHashCommands hashCommands() {
         return new RedissonHashCommands(this);
+    }
+
+    @Override
+    public RedisKeyCommands keyCommands() {
+        return new RedissonKeyCommands(this);
     }
 
     public RBatch getRBatch(){

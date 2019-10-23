@@ -7,7 +7,7 @@
         </encoder>
     </appender>
 
-    <logger name="com.woople" level="INFO">
+    <logger name="com.woople" level="INFO" additivity="false">
         <appender-ref ref="STDOUT" />
     </logger>
 

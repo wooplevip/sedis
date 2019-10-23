@@ -1,5 +1,6 @@
 package com.woople.calcite.adapter.redis;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class RedisTableOptions {
@@ -8,7 +9,7 @@ public class RedisTableOptions {
     private String[] fieldTypes;
     private String[] keyFields;
 
-    private Map<String, String> params;
+    private Map<String, String> params = new HashMap<>();
 
     public String getPrefixKey() {
         return prefixKey;

@@ -30,11 +30,11 @@ public class RedisTableTest {
     }
 
     @Test
-    @Ignore
     public void testRedisTable() throws Exception{
         ResultSet resultSet = statement.executeQuery("select * from \"baz\" where \"id\"='2'");
         logger.info(getData(resultSet).toString().toUpperCase());
         logger.info("===========");
+        statement.close();
     }
 
     private List<Map<String,Object>> getData(ResultSet resultSet)throws Exception{

@@ -1,5 +1,8 @@
 package com.woople.calcite.adapter.redis;
 
+import com.woople.calcite.adapter.redis.connection.RedisConnection;
+import com.woople.calcite.adapter.redis.connection.RedisConnectionFactory;
+import com.woople.calcite.adapter.redis.connection.redisson.RedissonConnectionFactory;
 import org.apache.calcite.DataContext;
 import org.apache.calcite.linq4j.AbstractEnumerable;
 import org.apache.calcite.linq4j.Enumerable;
@@ -10,16 +13,18 @@ import org.apache.calcite.rel.type.RelProtoDataType;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.schema.FilterableTable;
 import org.apache.calcite.schema.impl.AbstractTable;
-import org.redisson.Redisson;
-import org.redisson.api.*;
 import org.redisson.client.codec.Codec;
 import org.redisson.config.ClusterServersConfig;
 import org.redisson.config.Config;
+import org.redisson.config.SingleServerConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class RedisTable extends AbstractTable implements FilterableTable {
+    private final Logger logger = LoggerFactory.getLogger(AbstractTable.class);
     protected RelProtoDataType protoRowType;
 
     private RedisTableOptions redisTableOptions;
@@ -41,20 +46,34 @@ public class RedisTable extends AbstractTable implements FilterableTable {
             e.printStackTrace();
         }
 
-        ClusterServersConfig serversConfig = config.useClusterServers()
-                .setScanInterval(5000)
-                .setConnectTimeout(100000)
-                .setTimeout(100000);
+        String connectionType = this.redisTableOptions.getParams().getOrDefault(RedisTableConstants.SEDIS_REDIS_CONNECTION, "redisson");
+        RedisConnectionFactory redisConnectionFactory = null;
+        if (connectionType.equals("redisson")){
+            String[] nodes = redisTableOptions.getRedisNodes().split(",");
+            if (nodes.length > 1){
+                ClusterServersConfig serversConfig = config.useClusterServers()
+                        .setScanInterval(5000)
+                        .setConnectTimeout(100000)
+                        .setTimeout(100000);
+                for (String node : nodes) {
+                    serversConfig.addNodeAddress("redis://" + node);
+                }
+            }else {
+                SingleServerConfig serversConfig = config.useSingleServer()
+                        .setConnectTimeout(100000)
+                        .setTimeout(100000);
 
-        for (String node : redisTableOptions.getRedisNodes().split(",")) {
-            serversConfig.addNodeAddress("redis://" + node);
+                serversConfig.setAddress("redis://" + nodes[0]);
+            }
+
+            redisConnectionFactory = new RedissonConnectionFactory(config);
         }
 
-        RedissonClient redissonClient = Redisson.create(config);
+        RedisConnection redisConnection = redisConnectionFactory.getConnection();
 
         return new AbstractEnumerable<Object[]>() {
             public Enumerator<Object[]> enumerator() {
-                return new RedisMessageEnumerator(redissonClient, redisTableOptions, cancelFlag);
+                return new RedisMessageEnumerator(redisConnection, redisTableOptions, cancelFlag);
             }
         };
     }

@@ -1,25 +1,27 @@
 package com.woople.calcite.adapter.redis;
 
-import com.google.common.collect.Lists;
+import com.woople.calcite.adapter.redis.connection.RedisConnection;
 import org.apache.calcite.avatica.util.DateTimeUtils;
 import org.apache.calcite.linq4j.Enumerator;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
-import org.redisson.api.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.text.ParseException;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.BiConsumer;
+
+import static com.woople.calcite.adapter.redis.RedisTableConstants.SEDIS_REDIS_FETCHER_SIZE;
 
 public class RedisMessageEnumerator implements Enumerator<Object[]> {
-    private final RedissonClient redissonClient;
+    private final static Logger logger = LoggerFactory.getLogger(RedisMessageEnumerator.class);
+    private final RedisConnection redisConnection;
     private final AtomicBoolean cancelFlag;
     private final RedisTableOptions redisTableOptions;
 
     private Map<String, String> current;
-    private LinkedList<Map<String, String>> bufferedRecords;
+    private ConcurrentLinkedQueue<Map<String, String>> bufferedRecords;
 
     private static final FastDateFormat TIME_FORMAT_DATE;
     private static final FastDateFormat TIME_FORMAT_TIME;
@@ -34,10 +36,10 @@ public class RedisMessageEnumerator implements Enumerator<Object[]> {
     }
 
 
-    public RedisMessageEnumerator(RedissonClient redissonClient,
+    public RedisMessageEnumerator(RedisConnection redisConnection,
                                   RedisTableOptions redisTableOptions,
                                   AtomicBoolean cancelFlag) {
-        this.redissonClient = redissonClient;
+        this.redisConnection = redisConnection;
         this.cancelFlag = cancelFlag;
         this.redisTableOptions = redisTableOptions;
     }
@@ -55,12 +57,12 @@ public class RedisMessageEnumerator implements Enumerator<Object[]> {
         }
 
         if (bufferedRecords == null){
-            bufferedRecords = new LinkedList<>();
+            bufferedRecords = new ConcurrentLinkedQueue<>();
             pullRecords();
         }
 
         if (!bufferedRecords.isEmpty()) {
-            current = bufferedRecords.removeFirst();
+            current = bufferedRecords.poll();
             return true;
         }
 
@@ -76,35 +78,30 @@ public class RedisMessageEnumerator implements Enumerator<Object[]> {
     @Override
     public void close() {
         bufferedRecords = null;
-        redissonClient.shutdown();
+        redisConnection.close();
     }
 
     private void pullRecords() {
-        RBatch batch = redissonClient.createBatch(BatchOptions.defaults());
-        Iterable<String> keys = redissonClient.getKeys().getKeysByPattern(redisTableOptions.getPrefixKey() + "*", RedisTableConstants.REDIS_SCAN_COUNT);
-        List<String> keyList = Lists.newArrayList(keys);
+        List<String> keys = this.redisConnection.keyCommands().keys(redisTableOptions.getPrefixKey() + "*", RedisTableConstants.REDIS_SCAN_COUNT);
 
         ExecutorService cachedThreadPool = Executors.newCachedThreadPool();
 
-        ConcurrentHashMap<String, RFuture<Map<String, String>>> rf = new ConcurrentHashMap<>();
-        CountDownLatch latch = new CountDownLatch(keyList.size());
+        int fetcherSize = Integer.parseInt(redisTableOptions.getParams().getOrDefault(SEDIS_REDIS_FETCHER_SIZE, "5"));
 
-        cachedThreadPool.execute(new Runnable() {
-            @Override
-            public void run() {
-                int recordCount = 0;
-                for (String key : keyList) {
-                    recordCount ++;
-                    if (recordCount > RedisTableConstants.REDIS_TABLE_RECORD_MAX){
-                        break;
-                    }
-                    RMapAsync<String, String> rMapAsync = batch.getMap(key);
-                    RFuture<Map<String, String>> rfMap = rMapAsync.readAllMapAsync();
-                    rf.put(key, rfMap);
-                    latch.countDown();
-                }
+        CountDownLatch latch = new CountDownLatch((keys.size()-1)/fetcherSize + 1);
+
+        List<String> keyList = new ArrayList<>();
+
+        for (String key: keys){
+            if (keyList.size() == fetcherSize){
+                cachedThreadPool.execute(new RedissonFetcher(keyList , latch));
+                keyList = new ArrayList<>();
             }
-        });
+
+            keyList.add(key);
+        }
+
+        cachedThreadPool.execute(new RedissonFetcher(keyList, latch));
 
         try {
             latch.await();
@@ -114,19 +111,22 @@ public class RedisMessageEnumerator implements Enumerator<Object[]> {
             cachedThreadPool.shutdownNow();
         }
 
-        for (String key : rf.keySet()) {
-            RFuture<Map<String, String>> bazFuture = rf.get(key);
-            bazFuture.whenComplete(new BiConsumer<Map<String, String>, Throwable>() {
-                @Override
-                public void accept(Map<String, String> objectObjectMap, Throwable throwable) {
-                    Map<String, String> row = new HashMap<>(objectObjectMap);
-                    row.put(redisTableOptions.getKeyFields()[0], StringUtils.substringAfter(key, ":"));
-                    bufferedRecords.addLast(row);
-                }
-            });
+    }
+
+    class RedissonFetcher implements Runnable{
+        private List<String> keys;
+        private CountDownLatch latch;
+
+        public RedissonFetcher(List<String> keys, CountDownLatch latch) {
+            this.keys = keys;
+            this.latch = latch;
         }
 
-        batch.execute();
+        @Override
+        public void run() {
+            bufferedRecords.addAll(redisConnection.hashCommands().hGetAll(keys));
+            latch.countDown();
+        }
     }
 
 
