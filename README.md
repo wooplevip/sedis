@@ -40,6 +40,7 @@
 
     public class SedisExamples {
         public static void main(String[] args) throws Exception{
+            //sedis.redis.cluster.nodes如果只配置一个节点表示使用的为redis单机模式
             String model = "{\"version\":\"1.0\",\"defaultSchema\":\"SEDIS\",\"schemas\":[{\"name\":\"SEDIS\",\"type\":\"custom\",\"factory\":\"com.woople.calcite.adapter.redis.RedisSchemaFactory\",\"operand\":{\"sedis.redis.cluster.nodes\":\"10.1.236.179:6379,10.1.236.179:6380,10.1.236.179:6381\",\"sedis.redis.table\":{\"tableName\":\"BAZ\",\"fields\":\"ID:VARCHAR,NAME:VARCHAR\",\"keys\":\"ID\"}}}]}";
             Connection connection = DriverManager.getConnection("jdbc:calcite:model=inline:" + model);
 
@@ -70,12 +71,12 @@
 
 目前0.1版本为简单的体验版
 
-1. 只支持Redis cluster中的HASH结构的数据
-2. 只支持简单`select`查询语句，不支持join
+1. 支持Redis单机模式和cluster模式
+2. 只支持Redis cluster中的HASH结构的数据
+3. 只支持简单`select`查询语句，不支持join
 
 ## 后续计划
 
-1. 支持Redis单机模式
-2. 优化参数配置
-3. 支持redis其他格式数据的查询
-4. 支持`update`和`insert`语句
+1. 优化参数配置
+2. 支持redis其他格式数据的查询
+3. 支持`update`和`insert`语句
