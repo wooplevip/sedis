@@ -4,7 +4,6 @@ class Constant {
     static final String REDIS_URL_PERFIX = "redis://";
 
 
-
     static final String SIDES_REDIS_MODE = "sides.redis.mode";
     static final String SIDES_REDIS_MODE_DEFAULT = "cluster";
 
